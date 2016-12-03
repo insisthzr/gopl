@@ -102,7 +102,7 @@ func dirents(dir string) []os.FileInfo {
 }
 
 func printDiskUsage(nfiles, nbytes int64) {
-	fmt.Printf("%d files %.1f MB\n", nfiles, float64(nbytes) / 1e6)
+	fmt.Printf("%d files %.1f GB\n", nfiles, float64(nbytes) / 1e9)
 }
 
 func cancelled() bool {
