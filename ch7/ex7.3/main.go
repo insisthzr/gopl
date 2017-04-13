@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/insisthzr/gopl/utils/quque"
+	"github.com/insisthzr/gopl/utils/queue"
 	"strings"
 )
 
