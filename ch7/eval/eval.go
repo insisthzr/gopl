@@ -32,24 +32,24 @@ type Expr interface {
 	Check(vars map[Var]bool) error
 }
 
-func (v Var)Eval(env Env) float64 {
+func (v Var) Eval(env Env) float64 {
 	return env[v]
 }
 
-func (v Var)Check(vars map[Var]bool) error {
+func (v Var) Check(vars map[Var]bool) error {
 	vars[v] = true
 	return nil
 }
 
-func (l literal)Eval(_ Env) float64 {
+func (l literal) Eval(_ Env) float64 {
 	return float64(l)
 }
 
-func (literal)Check(vars map[Var]bool) error {
+func (literal) Check(vars map[Var]bool) error {
 	return nil
 }
 
-func (u unary)Eval(env Env) float64 {
+func (u unary) Eval(env Env) float64 {
 	switch u.op {
 	case '+':
 		return +u.x.Eval(env)
@@ -59,14 +59,14 @@ func (u unary)Eval(env Env) float64 {
 	panic(fmt.Sprintf("unsupported unary operator: %q", u.op))
 }
 
-func (u unary)Check(vars map[Var]bool) error {
+func (u unary) Check(vars map[Var]bool) error {
 	if !strings.ContainsRune("+-", u.op) {
 		return fmt.Errorf("unexpected unary op %q", u.op)
 	}
 	return u.x.Check(vars)
 }
 
-func (b binary)Eval(env Env) float64 {
+func (b binary) Eval(env Env) float64 {
 	switch b.op {
 	case '+':
 		return b.x.Eval(env) + b.y.Eval(env)
@@ -80,7 +80,7 @@ func (b binary)Eval(env Env) float64 {
 	panic(fmt.Sprintf("unsupported binary operator: %q", b.op))
 }
 
-func (b binary)Check(vars map[Var]bool) error {
+func (b binary) Check(vars map[Var]bool) error {
 	if !strings.ContainsRune("+-*/", b.op) {
 		return fmt.Errorf("unexpected binary op %q", b.op)
 	}
@@ -90,7 +90,7 @@ func (b binary)Check(vars map[Var]bool) error {
 	return b.y.Check(vars)
 }
 
-func (c call)Eval(env Env) float64 {
+func (c call) Eval(env Env) float64 {
 	switch c.fn {
 	case "pow":
 		return math.Pow(c.args[0].Eval(env), c.args[1].Eval(env))
@@ -102,7 +102,7 @@ func (c call)Eval(env Env) float64 {
 	panic(fmt.Sprintf("unsupported binary operator: %q", c.fn))
 }
 
-func (c call)Check(vars map[Var]bool) error {
+func (c call) Check(vars map[Var]bool) error {
 	arity, ok := numParams[c.fn]
 	if !ok {
 		return fmt.Errorf("unknown function %q", c.fn)
@@ -118,5 +118,4 @@ func (c call)Check(vars map[Var]bool) error {
 	return nil
 }
 
-var numParams = map[string]int{"pow":2, "sin":1, "sqrt":1}
-
+var numParams = map[string]int{"pow": 2, "sin": 1, "sqrt": 1}

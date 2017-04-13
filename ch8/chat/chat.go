@@ -1,10 +1,10 @@
 package main
 
 import (
-	"net"
-	"log"
 	"bufio"
 	"fmt"
+	"log"
+	"net"
 )
 
 func main() {
@@ -23,11 +23,11 @@ func main() {
 	}
 }
 
-type client chan <- string
+type client chan<- string
 
 var (
 	entering = make(chan client)
-	leaving = make(chan client)
+	leaving  = make(chan client)
 	messages = make(chan string)
 )
 

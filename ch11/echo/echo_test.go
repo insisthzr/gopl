@@ -1,9 +1,9 @@
 package main
 
 import (
-	"testing"
-	"fmt"
 	"bytes"
+	"fmt"
+	"testing"
 )
 
 func TestEcho(t *testing.T) {

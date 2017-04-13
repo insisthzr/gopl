@@ -1,13 +1,13 @@
 package main
 
 import (
-	"os"
-	"io/ioutil"
-	"fmt"
-	"path/filepath"
 	"flag"
-	"time"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sync"
+	"time"
 )
 
 var verbose = flag.Bool("v", false, "show verbose progress message")
@@ -47,7 +47,7 @@ func main() {
 
 	var nfiles, nbytes int64
 
-	loop:
+loop:
 	for {
 		select {
 		case <-done:
@@ -68,7 +68,7 @@ func main() {
 	printDiskUsage(nfiles, nbytes)
 }
 
-func walkDir(dir string, n *sync.WaitGroup, fileSizes chan <-int64) {
+func walkDir(dir string, n *sync.WaitGroup, fileSizes chan<- int64) {
 	defer n.Done()
 	if cancelled() {
 		return
@@ -102,7 +102,7 @@ func dirents(dir string) []os.FileInfo {
 }
 
 func printDiskUsage(nfiles, nbytes int64) {
-	fmt.Printf("%d files %.1f GB\n", nfiles, float64(nbytes) / 1e9)
+	fmt.Printf("%d files %.1f GB\n", nfiles, float64(nbytes)/1e9)
 }
 
 func cancelled() bool {

@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"net/smtp"
-	"log"
 	"fmt"
+	"log"
+	"net/smtp"
 )
 
 func bytesInUse(username string) int64 {
@@ -19,7 +19,7 @@ const template = `Warning: you are using %d bytes of storage,
 
 var notifyUser = func(username, msg string) {
 	auth := smtp.PlainAuth("", sender, password, hostname)
-	err := smtp.SendMail(hostname + ":587", auth, sender, []string{username}, []byte(msg))
+	err := smtp.SendMail(hostname+":587", auth, sender, []string{username}, []byte(msg))
 	if err != nil {
 		log.Printf("smtp.SendEmail(%s) failed: %s", username, err)
 	}

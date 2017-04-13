@@ -40,5 +40,3 @@ func TestCoverage(t *testing.T) {
 		}
 	}
 }
-
-

@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
 
 func TestCheckQuotaNotifiesUser(t *testing.T) {
@@ -18,7 +18,7 @@ func TestCheckQuotaNotifiesUser(t *testing.T) {
 
 	const user = "joe@example.org"
 	CheckQuota(user)
-	if notifiedUser == ""&&notifiedMsg == "" {
+	if notifiedUser == "" && notifiedMsg == "" {
 		t.Fatal("notifyUser not called")
 	}
 	if notifiedUser != user {
