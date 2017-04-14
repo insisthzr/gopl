@@ -1,11 +1,11 @@
-package queue
+package utils
 
 import (
 	"reflect"
 	"testing"
 )
 
-func TestMain(t *testing.T) {
+func TestQueue(t *testing.T) {
 	want := []int{}
 	got := []int{}
 
