@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	Size = 1
+	Size  = 1
 	space = strings.Repeat(" ", Size)
 )
 
@@ -72,7 +72,7 @@ func (m matrix) format() string {
 
 	for i := 0; i < height; i++ {
 		prefix, _ := twoPowN(height - 1 - i)
-		jump := 2 * prefix - 1
+		jump := 2*prefix - 1
 		for j := 0; j < width; j++ {
 			if j == 0 {
 				buf.WriteString(strings.Repeat(space, prefix))
@@ -111,7 +111,7 @@ func (t *tree) bfs(f func(node *withPosition)) error {
 			q.Push(&withPosition{node.Value.left, node.Level + 1, 2 * node.Index})
 		}
 		if node.Value.right != nil {
-			q.Push(&withPosition{node.Value.right, node.Level + 1, 2 * node.Index + 1})
+			q.Push(&withPosition{node.Value.right, node.Level + 1, 2*node.Index + 1})
 		}
 	}
 	return nil

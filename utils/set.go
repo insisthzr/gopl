@@ -28,7 +28,7 @@ func (s *Set) Delete(key string) {
 
 func (s *Set) String() string {
 	if len(s.m) == 0 {
-		return ""
+		return "[]"
 	}
 	buf := bytes.Buffer{}
 	buf.WriteString("[")
