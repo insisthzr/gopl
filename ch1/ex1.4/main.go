@@ -1,58 +1,86 @@
 package main
 
 import (
-	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/insisthzr/gopl/utils"
-	"io/ioutil"
-	"strings"
-	//"time"
 )
 
-type dup struct {
-	count int
-	files *utils.Set
+type LineCount struct {
+	Count int
+	Files utils.Set
 }
 
-func newDup() *dup {
-	return &dup{files: utils.NewSet()}
+func NewLineCount() LineCount {
+	return LineCount{
+		Files: utils.NewSet(),
+	}
 }
 
-type safeCounts struct {
-	cs   map[string]*dup
-	lock *sync.Mutex
+type LineCountsSync struct {
+	lineCounts map[string]LineCount
+	mu         sync.RWMutex
 }
 
-func newSafeCounts() *safeCounts {
-	return &safeCounts{cs: map[string]*dup{}, lock: new(sync.Mutex)}
+func NewLineCountsSync() LineCountsSync {
+	return LineCountsSync{
+		lineCounts: map[string]LineCount{},
+	}
 }
 
-func (p *safeCounts) counts(filename string, data string) {
+func (p *LineCountsSync) Counts(filename string, data string) {
 	for _, line := range strings.Split(data, "\n") {
-		p.add(line, filename)
+		p.Add(line, filename)
 	}
 }
 
-func (p *safeCounts) add(line string, file string) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *LineCountsSync) Add(line string, file string) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
-	if p.cs[line] == nil {
-		p.cs[line] = newDup()
+	_, ok := p.lineCounts[line]
+	if !ok {
+		p.lineCounts[line] = NewLineCount()
 	}
-	p.cs[line].count++
-	p.cs[line].files.Add(file)
+
+	lineCount := p.lineCounts[line]
+	newLineCount := LineCount{lineCount.Count + 1, lineCount.Files}
+	p.lineCounts[line] = newLineCount
+	p.lineCounts[line].Files.Add(file)
+}
+
+func (p *LineCountsSync) Get(line string) LineCount {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	return p.lineCounts[line]
+}
+
+func (p *LineCountsSync) For(handler func(line string, lineCount LineCount)) {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	//block write
+	for line, lineCount := range p.lineCounts {
+		handler(line, lineCount)
+	}
 }
 
 func main() {
-	ws := &sync.WaitGroup{}
-	sc := newSafeCounts()
-	files := os.Args[1:]
+	if len(os.Args) < 2 {
+		log.Printf("params too short")
+	}
 
-	for _, arg := range files {
-		f, err := os.Open(arg)
+	ws := &sync.WaitGroup{}
+	lineCounts := NewLineCountsSync()
+	filenames := os.Args[1:]
+
+	for _, filename := range filenames {
+		f, err := os.Open(filename)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -62,15 +90,14 @@ func main() {
 		go func() {
 			defer ws.Done()
 
-			sc.counts(f.Name(), string(data))
+			lineCounts.Counts(f.Name(), string(data))
 		}()
 	}
-
 	ws.Wait()
-	//time.Sleep(1 * time.Second)
-	for line, d := range sc.cs {
-		if d.count > 1 {
-			fmt.Printf("%d\t%s\t%s\n", d.count, line, d.files)
+
+	lineCounts.For(func(line string, lineCount LineCount) {
+		if lineCount.Count > 1 {
+			log.Printf("%d\t%s\t%s\n", lineCount.Count, line, lineCount.Files)
 		}
-	}
+	})
 }
