@@ -30,7 +30,9 @@ func Comma(str string) string {
 	index := strings.Index(str, ".")
 	if index > -1 {
 		left = str[:index]
-		right = str[index+1:]
+		if index < last {
+			right = str[index+1:]
+		}
 	}
 
 	result := sign
