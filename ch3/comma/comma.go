@@ -31,7 +31,7 @@ func Comma(str string) string {
 	if index > -1 {
 		left = str[:index]
 		if index < last {
-			right = str[index+1:]
+			right = str[index+1:] //WATCH OUT index DON'T greater equal than slice capcity
 		}
 	}
 
