@@ -9,13 +9,19 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 const (
 	xkcdURL    = "https://xkcd.com/info.0.json"
 	xkcdURLFmt = "https://xkcd.com/%d/info.0.json"
 
-	usage = "xkcd get N\nxkcd index INDEX_FILE\nxkcd search INDEX_FILE QUERY\n"
+	usage    = "xkcd get N\nxkcd index\nxkcd search QUERY\n"
+	filename = "index.json"
+)
+
+var (
+	workerNum = 32
 )
 
 type Comic struct {
@@ -73,16 +79,55 @@ func getComics() ([]*Comic, error) {
 	if err != nil {
 		return nil, err
 	}
-	comics := make([]*Comic, 0, max)
+	comicChan := make(chan *Comic, max)
+	numChan := make(chan int, max)
+
+	go func() {
+		mapNum(numChan, max) //map
+		defer close(numChan)
+	}()
+
+	wg := &sync.WaitGroup{}
+	for i := 0; i < workerNum; i++ {
+		wg.Add(1)
+		go func() {
+			consume(numChan, comicChan) //work
+			defer wg.Done()
+		}()
+	}
+	wg.Wait()
+	close(comicChan)
+
+	done := make(chan []*Comic)
+	go reduce(comicChan, done) //reduce
+	comics := <-done
+
+	return comics, nil
+}
+
+func mapNum(numChan chan<- int, max int) {
 	for i := 1; i <= max; i++ {
-		comic, err := getComic(i)
+		numChan <- i
+	}
+}
+
+func consume(numChan <-chan int, comicChan chan<- *Comic) {
+	for n := range numChan {
+		comic, err := getComic(n)
 		if err != nil {
-			fmt.Printf("getComic num %d error %v\n", i, err)
+			fmt.Printf("getComic num %d error %v\n", n, err)
 			continue
 		}
+		comicChan <- comic
+	}
+}
+
+func reduce(comicChan <-chan *Comic, done chan<- []*Comic) {
+	comics := []*Comic{}
+	for comic := range comicChan {
 		comics = append(comics, comic)
 	}
-	return comics, nil
+	done <- comics
 }
 
 func genNumComicMap(comics []*Comic) NumComicMap {
@@ -167,32 +212,40 @@ func search(filename string, query string) error {
 	if err != nil {
 		return err
 	}
-	getComicsByWord(numToComic, wordToNum, query)
+	getComicsByWords(numToComic, wordToNum, strings.Fields(query))
 	return nil
 }
 
-func getComicsByWord(numToComic NumComicMap, wordToNum WordNumFoundMap, query string) {
-	for num := range wordToNum[query] {
-		comic := numToComic[num]
-		fmt.Printf("num %d total %s\n", num, comic.Title)
+func getComicsByWords(numToComic NumComicMap, wordToNum WordNumFoundMap, query []string) {
+	found := map[int]int{}
+	for _, word := range query {
+		for num := range wordToNum[word] {
+			found[num]++
+		}
+	}
+
+	for num, count := range found {
+		if count == len(query) { //match all words
+			comic := numToComic[num]
+			fmt.Printf("num %d total %s\n", num, comic.Title)
+		}
 	}
 }
 
-func printUsage() {
+func printUsageAndExit() {
 	fmt.Printf(usage)
+	os.Exit(1)
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		printUsage()
-		os.Exit(1)
+		printUsageAndExit()
 	}
 	cmd := os.Args[1]
 	switch cmd {
 	case "get":
 		if len(os.Args) != 3 {
-			printUsage()
-			os.Exit(1)
+			printUsageAndExit()
 		}
 		n, err := strconv.Atoi(os.Args[2])
 		if err != nil {
@@ -202,33 +255,29 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error getComic %v\n", err)
 		}
-		data, err := json.Marshal(comic)
+		data, err := json.MarshalIndent(comic, " ", " ")
 		if err != nil {
 			fmt.Printf("Error getComic %v\n", err)
 		}
 		fmt.Println(string(data))
 	case "index":
-		if len(os.Args) != 3 {
-			printUsage()
-			os.Exit(1)
+		if len(os.Args) != 2 {
+			printUsageAndExit()
 		}
-		err := index(os.Args[2])
+		err := index(filename)
 		if err != nil {
 			fmt.Printf("Error index %v\n", err)
 		}
 	case "search":
-		if len(os.Args) != 4 {
-			printUsage()
-			os.Exit(1)
+		if len(os.Args) != 3 {
+			printUsageAndExit()
 		}
-		filename := os.Args[2]
-		query := os.Args[3]
+		query := os.Args[2]
 		err := search(filename, query)
 		if err != nil {
 			fmt.Printf("Error index %v\n", err)
 		}
 	default:
-		printUsage()
-		os.Exit(1)
+		printUsageAndExit()
 	}
 }
