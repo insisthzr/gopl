@@ -27,7 +27,7 @@ type StackOpRand struct {
 func (r *StackOpRand) Rand() StackOp {
 	len := stackOpEnd - stackOpStart + 1
 	n := r.r.Intn(len)
-	return StackOp(n)
+	return StackOp(n - stackOpStart)
 }
 
 func NewStackOpRand(seed int64) *StackOpRand {
