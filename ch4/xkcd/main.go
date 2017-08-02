@@ -81,24 +81,26 @@ func getComics() ([]*Comic, error) {
 	}
 	comicChan := make(chan *Comic, max)
 	numChan := make(chan int, max)
+	done := make(chan []*Comic)
 
 	go func() {
 		mapNum(numChan, max) //map
 		defer close(numChan)
 	}()
 
-	wg := &sync.WaitGroup{}
-	for i := 0; i < workerNum; i++ {
-		wg.Add(1)
-		go func() {
-			consume(numChan, comicChan) //work
-			defer wg.Done()
-		}()
-	}
-	wg.Wait()
-	close(comicChan)
+	go func() {
+		wg := &sync.WaitGroup{}
+		for i := 0; i < workerNum; i++ {
+			wg.Add(1)
+			go func() {
+				consume(numChan, comicChan) //work
+				defer wg.Done()
+			}()
+		}
+		wg.Wait()
+		defer close(comicChan)
+	}()
 
-	done := make(chan []*Comic)
 	go reduce(comicChan, done) //reduce
 	comics := <-done
 
