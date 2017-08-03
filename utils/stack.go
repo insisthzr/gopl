@@ -23,36 +23,31 @@ func (s *Stack) Pop() (interface{}, bool) {
 }
 
 type StackConfig struct {
-	Length   int
 	Capacity int
 }
 
 var (
-	defaultStackConfig = &StackConfig{
-		Length:   0,
+	DefaultStackConfig = &StackConfig{
 		Capacity: 0,
 	}
 )
 
 func NewStack() *Stack {
-	return NewStackWithConfig(defaultStackConfig)
+	return NewStackWithConfig(DefaultStackConfig)
 }
 
 func NewStackWithConfig(config *StackConfig) *Stack {
 	if config == nil {
-		return newStackWithConfig(defaultStackConfig)
-	}
-	if config.Length == 0 {
-		config.Length = defaultStackConfig.Length
+		return newStackWithConfig(DefaultStackConfig)
 	}
 	if config.Capacity == 0 {
-		config.Capacity = defaultStackConfig.Capacity
+		config.Capacity = DefaultStackConfig.Capacity
 	}
 	return newStackWithConfig(config)
 }
 
 func newStackWithConfig(config *StackConfig) *Stack {
 	return &Stack{
-		stack: make([]interface{}, config.Length, config.Capacity),
+		stack: make([]interface{}, 0, config.Capacity),
 	}
 }

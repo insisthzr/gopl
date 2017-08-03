@@ -9,12 +9,6 @@ type Set struct {
 	m map[string]struct{}
 }
 
-func NewSet() Set {
-	return Set{
-		m: map[string]struct{}{},
-	}
-}
-
 func (s Set) Add(key string) {
 	s.m[key] = struct{}{}
 }
@@ -36,7 +30,7 @@ func (s Set) String() string {
 	buf.WriteString("[")
 
 	first := true
-	for key, _ := range s.m {
+	for key := range s.m {
 		if first {
 			first = false
 		} else {
@@ -47,4 +41,27 @@ func (s Set) String() string {
 
 	buf.WriteString("]")
 	return buf.String()
+}
+
+type SetConfig struct {
+	Capacity int
+}
+
+var (
+	DefaultSetConfig = &SetConfig{
+		Capacity: 0,
+	}
+)
+
+func NewSetWithConfig(config *SetConfig) *Set {
+	if config.Capacity == 0 {
+		config.Capacity = DefaultSetConfig.Capacity
+	}
+	return &Set{
+		m: make(map[string]struct{}, config.Capacity),
+	}
+}
+
+func NewSet() *Set {
+	return NewSetWithConfig(DefaultSetConfig)
 }
