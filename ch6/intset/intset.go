@@ -1,4 +1,4 @@
-package main
+package intset
 
 import (
 	"bytes"
@@ -31,6 +31,12 @@ func (s *IntSet) Add(x int) {
 	s.words[word] |= (1 << bit)
 }
 
+func (s *IntSet) AddAll(xs ...int) {
+	for _, x := range xs {
+		s.Add(x)
+	}
+}
+
 func (s *IntSet) Remove(x int) {
 	word := x / 64
 	bit := uint64(x % 64)
@@ -46,8 +52,9 @@ func (s *IntSet) Clear() {
 }
 
 func (s *IntSet) Copy() *IntSet {
-	copy := *s
-	return &copy
+	words := make([]uint64, len(s.words))
+	copy(words, s.words) // depend on slice's length
+	return &IntSet{words: words}
 }
 
 func (s *IntSet) UnionWith(t *IntSet) {
@@ -58,6 +65,32 @@ func (s *IntSet) UnionWith(t *IntSet) {
 			s.words = append(s.words, tword)
 		}
 	}
+}
+
+func (s *IntSet) IntersectWith(t *IntSet) {
+	for i, tword := range t.words {
+		if i >= len(s.words) {
+			break
+		}
+		s.words[i] &= tword
+	}
+}
+
+func (s *IntSet) DifferenceWith(t *IntSet) {
+	for i, tword := range t.words {
+		if i >= len(s.words) {
+			break
+		}
+		s.words[i] &^= tword
+	}
+}
+
+func (s *IntSet) SymmetricDifference(t *IntSet) {
+	sCopy := s.Copy()
+	tCopy := t.Copy()
+	s.DifferenceWith(t)
+	tCopy.DifferenceWith(sCopy)
+	s.UnionWith(tCopy)
 }
 
 func (s *IntSet) Len() int {
@@ -89,22 +122,4 @@ func (s *IntSet) String() string {
 	}
 	buf.WriteByte('}')
 	return buf.String()
-}
-
-func main() {
-	var x, y IntSet
-	x.Add(1)
-	x.Add(144)
-	x.Add(9)
-	x.Remove(9)
-	fmt.Println(x.String()) // "{1 9 144}"
-
-	y.Add(9)
-	y.Add(42)
-	y.Remove(9)
-	fmt.Println(y.String()) // "{9 42}"
-
-	x.UnionWith(&y)
-	fmt.Println(x.String())           // "{1 9 42 144}"
-	fmt.Println(x.Has(9), x.Has(123)) // "true false"
 }
