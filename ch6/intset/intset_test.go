@@ -102,3 +102,12 @@ func TestSymmetricDifference(t *testing.T) {
 	expected.AddAll(0, 1, 3, 4)
 	assert.Equal(s.String(), expected.String())
 }
+
+func TestElems(t *testing.T) {
+	assert := require.New(t)
+
+	elems := []int{0, 4, 8, 9} //sorted
+	s := &IntSet{}
+	s.AddAll(elems...)
+	assert.Equal(elems, s.Elems())
+}

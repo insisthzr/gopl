@@ -101,6 +101,19 @@ func (s *IntSet) Len() int {
 	return sum
 }
 
+func (s *IntSet) Elems() []int {
+	elems := []int{}
+	for i, word := range s.words {
+		for j := 0; j < 64; j++ {
+			ju := uint64(j)
+			if word&uint64(1<<ju) != 0 {
+				elems = append(elems, 64*i+j)
+			}
+		}
+	}
+	return elems
+}
+
 func (s *IntSet) String() string {
 	buf := &bytes.Buffer{}
 	buf.WriteByte('{')
