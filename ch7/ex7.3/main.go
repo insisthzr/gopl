@@ -1,172 +1,122 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/insisthzr/gopl/utils/queue"
 	"strings"
 )
 
-var (
-	Size  = 1
-	space = strings.Repeat(" ", Size)
-)
-
-type tree struct {
-	value int
-	left  *tree
-	right *tree
+type treeNode struct {
+	value  int
+	parent *treeNode
+	left   *treeNode
+	right  *treeNode
 }
 
-func (t *tree) display() {
-	if t == nil {
-		return
+func (n *treeNode) print() string {
+	if n == nil {
+		return ""
 	}
-	fmt.Println(t.value)
-	t.left.display()
-	t.right.display()
+
+	str := fmt.Sprintf("%d", n.value)
+	children := ""
+	children += "("
+	children += n.left.print()
+	children += ","
+	children += n.right.print()
+	children += ")"
+	if children != "(,)" {
+		str += children
+	}
+	return str
 }
 
-func (t *tree) Height() int {
-	if t == nil {
-		return 0
-	}
-	lheight := t.left.Height()
-	rheight := t.right.Height()
-	if lheight > rheight {
-		return lheight + 1
-	}
-	return rheight + 1
-}
-
-func (t *tree) Stringy() string {
-
-	height := t.Height()
-	//width, _ := twoPowN(height)
-
-	m := genHalfMatrix(height)
-
-	t.bfs(func(node *withPosition) {
-		m[node.Level][node.Index] = node
-	})
-
-	return m.format()
-}
-
-type matrix [][]*withPosition
-
-func genHalfMatrix(height int) matrix {
-	m := make([][]*withPosition, height)
-	width := 1
-	for i, _ := range m {
-		m[i] = make([]*withPosition, width)
-		width *= 2
-	}
-	return m
-}
-
-func (m matrix) format() string {
-	var buf bytes.Buffer
-	height := len(m)
-	width := 1
-
-	for i := 0; i < height; i++ {
-		prefix, _ := twoPowN(height - 1 - i)
-		jump := 2*prefix - 1
-		for j := 0; j < width; j++ {
-			if j == 0 {
-				buf.WriteString(strings.Repeat(space, prefix))
-			} else {
-				buf.WriteString(strings.Repeat(space, jump))
-			}
-			e := m[i][j]
-			buf.WriteString(e.format())
-		}
-		buf.WriteString("\n")
-		width *= 2
-	}
-
-	return buf.String()
-}
-
-func twoPowN(n int) (int, error) {
-	if n < 0 {
-		return 0, fmt.Errorf("n < 0")
-	}
-	result := 1
-	for i := 0; i < n; i++ {
-		result *= 2
-	}
-	return result, nil
-}
-
-func (t *tree) bfs(f func(node *withPosition)) error {
-	q := queue.NewQueue()
-	q.Push(&withPosition{t, 0, 0})
-	for !q.Empty() {
-		elem, _ := q.Pop()
-		node := elem.(*withPosition)
-		f(node)
-		if node.Value.left != nil {
-			q.Push(&withPosition{node.Value.left, node.Level + 1, 2 * node.Index})
-		}
-		if node.Value.right != nil {
-			q.Push(&withPosition{node.Value.right, node.Level + 1, 2*node.Index + 1})
+func (n *treeNode) add(parent *treeNode, value int) *treeNode {
+	if n == nil {
+		return &treeNode{
+			parent: parent,
+			value:  value,
 		}
 	}
-	return nil
-}
-
-type withPosition struct {
-	Value *tree
-	Level int
-	Index int
-}
-
-func (p *withPosition) format() string {
-	if p == nil {
-		return space
-	}
-	format := fmt.Sprintf("%%%d.d", Size)
-	return fmt.Sprintf(format, p.Value.value)
-}
-
-func Sort(values []int) {
-	var root *tree
-	for _, v := range values {
-		root = add(root, v)
-	}
-	appendValues(values[:0], root)
-}
-
-func appendValues(values []int, t *tree) []int {
-	if t != nil {
-		values = appendValues(values, t.left)
-		values = append(values, t.value)
-		values = appendValues(values, t.right)
-	}
-	return values
-}
-
-func add(t *tree, value int) *tree {
-	if t == nil {
-		t = new(tree)
-		t.value = value
-		return t
-	}
-	if value < t.value {
-		t.left = add(t.left, value)
+	if value < n.value {
+		n.left = n.left.add(n, value)
 	} else {
-		t.right = add(t.right, value)
+		n.right = n.right.add(n, value)
 	}
-	return t
+	return n
+}
+
+func (n *treeNode) hasChildren() bool {
+	if n.left != nil {
+		return true
+	}
+	if n.right != nil {
+		return true
+	}
+	return false
+}
+
+func (n *treeNode) hasParent() bool {
+	return n.parent != nil
+}
+
+func (n *treeNode) format(prefix string) (string, int) {
+	str := prefix
+	if n.hasParent() {
+		str += "|-"
+	}
+	str += fmt.Sprintf("%d", n.value)
+	if n.hasChildren() {
+		str += "-|"
+	}
+	length := len(str) - len(prefix)
+	if n.hasChildren() {
+		length--
+	}
+	return str, length
+}
+
+func (n *treeNode) horizonPrint(prefix string) string {
+	if n == nil {
+		return ""
+	}
+
+	cur, length := n.format(prefix)
+	str := ""
+	str += n.right.horizonPrint(prefix + strings.Repeat(".", length))
+	str += cur + "\n"
+	str += n.left.horizonPrint(prefix + strings.Repeat(".", length))
+	return str
+}
+
+type Tree struct {
+	node *treeNode
+}
+
+func (t *Tree) Add(value int) {
+	t.node = t.node.add(nil, value)
+}
+
+func (t *Tree) Print() string {
+	return t.node.print()
+}
+
+func (t *Tree) HorizonPrint() string {
+	return t.node.horizonPrint("")
+}
+
+func NewTree() *Tree {
+	return &Tree{}
 }
 
 func main() {
-	arr := []int{4, 1, 2, 3}
-	var t *tree
-	for _, v := range arr {
-		t = add(t, v)
-	}
-	fmt.Println(t.Stringy())
+	//10 8 5 7 12 4
+	tree := NewTree()
+	tree.Add(10)
+	tree.Add(8)
+	tree.Add(5)
+	tree.Add(7)
+	tree.Add(12)
+	tree.Add(4)
+	fmt.Println(tree.Print())
+	fmt.Println(tree.HorizonPrint())
 }

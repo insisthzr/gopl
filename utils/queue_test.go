@@ -1,50 +1,43 @@
 package utils
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueue(t *testing.T) {
-	want := []int{}
-	got := []int{}
+	assert := require.New(t)
 
-	start := 1
-	end := 10
-	q := NewQueue()
-	for i := start; i < end; i++ {
-		q.Push(i)
-		want = append(want, i)
-	}
+	queue := NewQueue()
+	queue.Push(1)
+	queue.Push(2)
+	queue.Push(3)
+	assert.False(queue.IsEmpty())
 
-	for {
-		value, err := q.Pop()
-		if err == QueueEmpty {
-			break
-		}
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-		got = append(got, value.(int))
-	}
+	value, ok := queue.Front()
+	assert.True(ok)
+	assert.Equal(1, value)
 
-	for i := start; i < end; i++ {
-		q.Push(i)
-		want = append(want, i)
-	}
+	value, ok = queue.Back()
+	assert.True(ok)
+	assert.Equal(3, value)
 
-	for {
-		value, err := q.Pop()
-		if err == QueueEmpty {
-			break
-		}
-		if err != nil {
-			t.Fatal(err.Error())
-		}
-		got = append(got, value.(int))
-	}
+	value, ok = queue.Pop()
+	assert.True(ok)
+	assert.Equal(1, value)
+	assert.False(queue.IsEmpty())
 
-	if ok := reflect.DeepEqual(want, got); !ok {
-		t.Fatalf("want: %v go: %v\n", want, got)
-	}
+	queue.Push(4)
+	assert.False(queue.IsEmpty())
+	value, ok = queue.Back()
+	assert.True(ok)
+	assert.Equal(4, value)
+
+	wants := []int{2, 3, 4}
+	i := 0
+	queue.For(func(value interface{}) {
+		assert.Equal(wants[i], value)
+		i++
+	})
 }
